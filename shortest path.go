@@ -78,8 +78,6 @@ type Nodes struct{
 	
 }
 
-
-
 func createNodeMatrix(width,height int)[][]Node{
     matrix := make([][]Node, height) 
     for i := range matrix {
@@ -121,12 +119,6 @@ func createMatrixType(NodeMatrix [][]Node, matrixType int) [][]int{
     return matrix
 }
 
-
-
-func valueIsOne(node * Node) bool{
-	return node.value == 1
-}
-
 func AbsDiff(val1, val2 int) int{
 	Diff := val1-val2
 	if(Diff< 0){
@@ -154,16 +146,10 @@ func distToNeighboor(pos1, pos2 Position) int{
 	return -1
 }
 
-
-
-func (node * Node)foo2(){
-	if(node.color == WHITE ){
-		node.color = GREY
-		
-	}
-}
-
 func updateNeighboor(nodeFrom, nodeTo *Node){
+	if (nodeFrom == nodeTo){
+		return
+	}
 	if(nodeTo.value == 1){
 		nodeToDistViaNodeFrom := nodeFrom.dist + distToNeighboor(nodeFrom.pos, nodeTo.pos)
 		if( nodeTo.color == WHITE){
@@ -221,10 +207,29 @@ func main() {
     //dispMatrix(matrix)
     
     nodeMatrix :=createAndInitNodeMatrix(7,7,matrix)
+	nodes := Nodes{7,7,nodeMatrix}
+	
     valueMatrix :=createMatrixType(nodeMatrix,VALUE)
     dispMatrix(valueMatrix)
     
-	fmt.Println(distToNeighboor(Position{3,4},Position{4,5}))
+	
+	fmt.Println(nodes.nodeMatrix[1][1])
+	nodes.updateNeighboors(Position{1,1})
+	
+	fmt.Println(nodes.nodeMatrix[1][1])
+	fmt.Println(nodes.nodeMatrix[1][0])
+	fmt.Println(nodes.nodeMatrix[1][2])
+	fmt.Println(nodes.nodeMatrix[0][0])
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
 
 
