@@ -74,8 +74,9 @@ type Node struct{
 type Nodes struct{
     width  int
     height int
-    nodeMatrix [][]Node
-	
+    nodeMatrix 	[][]Node
+	nodeSlice	[]Node
+	startPos 	Position
 }
 
 func createNodeMatrix(width,height int)[][]Node{
@@ -100,7 +101,8 @@ func createAndInitNodeMatrix(width,height int, matrix[][]int)[][]Node{
     return NodeMatrix
 }
 
-func createMatrixType(NodeMatrix [][]Node, matrixType int) [][]int{
+func createMatrixType(nodes * Nodes, matrixType int) [][]int{
+	NodeMatrix :=nodes.nodeMatrix
     height := len(NodeMatrix)
     width  := len(NodeMatrix[0])
     matrix :=createMatrix(width,height)
@@ -146,7 +148,7 @@ func distToNeighboor(pos1, pos2 Position) int{
 	return -1
 }
 
-func updateNeighboor(nodeFrom, nodeTo *Node){
+func updateNeighboor(nodeFrom, nodeTo *Node, nodes * Nodes){
 	if (nodeFrom == nodeTo){
 		return
 	}
@@ -156,6 +158,7 @@ func updateNeighboor(nodeFrom, nodeTo *Node){
 			nodeTo.dist = nodeToDistViaNodeFrom
 			nodeTo.color = GREY
 			nodeTo.prevPos = nodeFrom.pos
+			nodes.nodeSlice = append(nodes.nodeSlice,*nodeTo)
 			//legg til nodeTo i liste og i rett posisjon.
 		}else if(nodeTo.color == GREY){
 			if(nodeToDistViaNodeFrom < nodeTo.dist){
@@ -175,9 +178,32 @@ func (nodes * Nodes)updateNeighboors(pos Position){
 	for y:=pos.y-1;y<=pos.y+1;y++{
 		for x:=pos.x-1;x<=pos.x+1;x++{
 			if(posWithinMatrix(nodes.width, nodes.height, Position{x,y})){
-				updateNeighboor(&nodes.nodeMatrix[pos.y][pos.x],&nodes.nodeMatrix[y][x])
+				updateNeighboor(&nodes.nodeMatrix[pos.y][pos.x],&nodes.nodeMatrix[y][x],nodes)
 			}
 		}
+	}
+}
+
+//oppdater noder rundt
+//sett seg selv sort
+//oppdater noder rundt noden først i nodeSlice
+
+func (nodes * Nodes) oneIteration(){
+	if(len(nodes.nodeSlice)>0){
+		node := nodes.nodeSlice[0]
+		nodes.nodeSlice = nodes.nodeSlice[1:]
+		nodes.updateNeighboors(node.pos)
+		nodes.nodeMatrix[node.pos.y][node.pos.x].color = BLACK
+	}
+}
+
+//burde ta inn en start-posisjon.
+func(nodes * Nodes) runShortestPath(){
+	for i:=0;i<100;i++{
+		if(len(nodes.nodeSlice) == 0){
+			break
+		}
+		nodes.oneIteration()
 	}
 }
 
@@ -201,50 +227,70 @@ func (nodes * Nodes)foo(pos Position){
 }
 
 
+//puts the last node in the list on its correct place. Sort by distance
+func sortSlice(nodeSlice []Node) []Node{
+	nodeToBeSwapped := nodeSlice[len(nodeSlice)-1]
+	distValue := nodeToBeSwapped.dist
+	returnSlice :=make([]Node,0)
+	for i:=0;i<len(nodeSlice);i++{
+		if(nodeSlice[i].dist > distValue){
+			lowPart := nodeSlice[:i]
+			heighPart:= nodeSlice[i:len(nodeSlice)-1]
+			returnSlice=append(returnSlice,lowPart...)
+			returnSlice=append(returnSlice,nodeToBeSwapped)
+			returnSlice=append(returnSlice,heighPart...)
+			return returnSlice
+		}
+	}
+	fmt.Println("ERROR sortSlice")
+	return returnSlice
+}
 
-func main() {
-    matrix:=MatrixWithRandomIntegers(7,7,0.7)
-    //dispMatrix(matrix)
-    
-    nodeMatrix :=createAndInitNodeMatrix(7,7,matrix)
-	nodes := Nodes{7,7,nodeMatrix}
-	
-    valueMatrix :=createMatrixType(nodeMatrix,VALUE)
-    dispMatrix(valueMatrix)
-    
-	
-	fmt.Println(nodes.nodeMatrix[1][1])
-	nodes.updateNeighboors(Position{1,1})
-	
-	fmt.Println(nodes.nodeMatrix[1][1])
-	fmt.Println(nodes.nodeMatrix[1][0])
-	fmt.Println(nodes.nodeMatrix[1][2])
-	fmt.Println(nodes.nodeMatrix[0][0])
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+func addAndSort(NodeSlice []Node, node Node) []Node{
+	NodeSlice = append(NodeSlice,node)
+	return sortSlice(NodeSlice)
+}
+
+func (nodes * Nodes)createPath(endNode * Node)[]Node{
+	NodeSlice := make([]Node,0)
+	NodeSlice = append(NodeSlice, *endNode)
+	node := *endNode
+	for i:=0;i<10;i++{
+		node = NodeSlice[0]
+		posNode :=node.prevPos
+		if(posNode.x != -1){
+			node = nodes.nodeMatrix[posNode.y][posNode.x]
+			NodeSlice=addAndSort(NodeSlice,node)
+			//fmt.Println(NodeSlice)
+		}
+		
+	}
+	return NodeSlice
 }
 
 
 
 
+func main() {
+    matrix:=MatrixWithRandomIntegers(7,7,0.7)
+    nodeMatrix :=createAndInitNodeMatrix(7,7,matrix)
+	nodes := Nodes{7,7,nodeMatrix,make([]Node,0),Position{0,0}}
+    valueMatrix :=createMatrixType(&nodes,VALUE)
+    dispMatrix(valueMatrix)
+    
+	
 
+	nodes.nodeSlice = append(nodes.nodeSlice,nodes.nodeMatrix[1][1])
+	fmt.Println(nodes.nodeMatrix[1][1])
+	nodes.runShortestPath()	
+	fmt.Println(nodes.nodeMatrix[1][1])
+	
+	NodePath :=nodes.createPath(&nodes.nodeMatrix[6][6])
+	fmt.Println(NodePath)
+	distMatrix := createMatrixType(&nodes,DIST)
+	dispMatrix(distMatrix)
+	
+	fmt.Println(nodes.nodeSlice)
+	fmt.Println(nodes.nodeMatrix[4][5])
 
-
-
-
-
-
-
-
-
-
-
-
+}
