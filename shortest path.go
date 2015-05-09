@@ -54,6 +54,11 @@ const (
     DIST    = iota
 )
 
+const (
+	SIDE_DISTANCE = 10
+	DIAGONAL_DISTANCE =14
+)
+
 type Position struct{
     x int
     y int
@@ -62,13 +67,18 @@ type Node struct{
     value   int //1 if part of the network of nodes. 0 othervise
     color   int //white, grey or black. White if noot seen yet.
     dist    int //distance from starting node. 
-    prevPos    Position    //the position of the cell which it came from. 
+	pos			Position
+    prevPos    	Position    //the position of the cell which it came from. 
 }
-type NodeMatrix struct{
+
+type Nodes struct{
     width  int
     height int
-    nodes[][]int
+    nodeMatrix [][]Node
+	
 }
+
+
 
 func createNodeMatrix(width,height int)[][]Node{
     matrix := make([][]Node, height) 
@@ -83,8 +93,9 @@ func createAndInitNodeMatrix(width,height int, matrix[][]int)[][]Node{
     for y:=0;y<len(NodeMatrix);y++{
         for x:=0;x<len(NodeMatrix[y]);x++{
             NodeMatrix[y][x].value = matrix[y][x]
-            NodeMatrix[y][x].dist = -1
-            NodeMatrix[y][x].prevPos=Position{-1,-1}
+            NodeMatrix[y][x].dist = 1000
+            NodeMatrix[y][x].prevPos= Position{-1,-1}
+			NodeMatrix[y][x].pos = Position{x,y}
         }
     }
     
@@ -111,14 +122,109 @@ func createMatrixType(NodeMatrix [][]Node, matrixType int) [][]int{
 }
 
 
+
+func valueIsOne(node * Node) bool{
+	return node.value == 1
+}
+
+func AbsDiff(val1, val2 int) int{
+	Diff := val1-val2
+	if(Diff< 0){
+		return -Diff
+	}
+	return Diff
+}
+
+func distToNeighboor(pos1, pos2 Position) int{
+	xAbsDiff := AbsDiff(pos1.x,pos2.x)
+	yAbsDiff := AbsDiff(pos1.y,pos2.y)
+	if(xAbsDiff > 1 || yAbsDiff >1 ){
+		fmt.Println("FEIL I distToNeighboor-funksjonen")
+	}
+	sumDiff := xAbsDiff + yAbsDiff
+	switch sumDiff{
+	case 0:
+		return 0
+	case 1:
+		return SIDE_DISTANCE
+	case 2: 
+		return DIAGONAL_DISTANCE
+	}
+	fmt.Println("FEIL I distToNeighboor-funksjonen")
+	return -1
+}
+
+
+
+func (node * Node)foo2(){
+	if(node.color == WHITE ){
+		node.color = GREY
+		
+	}
+}
+
+func updateNeighboor(nodeFrom, nodeTo *Node){
+	if(nodeTo.value == 1){
+		nodeToDistViaNodeFrom := nodeFrom.dist + distToNeighboor(nodeFrom.pos, nodeTo.pos)
+		if( nodeTo.color == WHITE){
+			nodeTo.dist = nodeToDistViaNodeFrom
+			nodeTo.color = GREY
+			nodeTo.prevPos = nodeFrom.pos
+			//legg til nodeTo i liste og i rett posisjon.
+		}else if(nodeTo.color == GREY){
+			if(nodeToDistViaNodeFrom < nodeTo.dist){
+				nodeTo.dist = nodeToDistViaNodeFrom
+				nodeTo.prevPos = nodeFrom.pos
+			}
+		}
+	}
+}
+
+func posWithinMatrix(width, height int, pos Position) bool {
+	return (pos.x >= 0 && pos.y >=0 && pos.x<width && pos.y <height)
+}
+
+
+func (nodes * Nodes)updateNeighboors(pos Position){
+	for y:=pos.y-1;y<=pos.y+1;y++{
+		for x:=pos.x-1;x<=pos.x+1;x++{
+			if(posWithinMatrix(nodes.width, nodes.height, Position{x,y})){
+				updateNeighboor(&nodes.nodeMatrix[pos.y][pos.x],&nodes.nodeMatrix[y][x])
+			}
+		}
+	}
+}
+
+
+func (nodes * Nodes)foo(pos Position){
+	
+	
+	
+	// sjekk at pos er på brett og har verdi 1
+	
+	// for hver naborute
+		// sjekk at pos er på brett og har verdi 1
+		// sjekk om naborute er ferdig
+		// se om distansen til naboruten er korterene enn den dit fra før av
+		// hvis det er tilfellet: oppdater distanse til naborute, oppdater farge, oppdater prevPos hos nabo.
+		// legg naboen til i listen over uferdige noder. 
+	
+	// sjekk at naboruter er på brett og har verdi 1
+	// hvis de er hvite, farg grå og legg til i liste på rett plass.
+	// 
+}
+
+
+
 func main() {
     matrix:=MatrixWithRandomIntegers(7,7,0.7)
-    dispMatrix(matrix)
+    //dispMatrix(matrix)
     
-    m :=createAndInitNodeMatrix(7,7,matrix)
-    valueMatrix :=createMatrixType(m,VALUE)
+    nodeMatrix :=createAndInitNodeMatrix(7,7,matrix)
+    valueMatrix :=createMatrixType(nodeMatrix,VALUE)
     dispMatrix(valueMatrix)
     
+	fmt.Println(distToNeighboor(Position{3,4},Position{4,5}))
 }
 
 
